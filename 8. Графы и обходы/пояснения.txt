@@ -1,0 +1,38 @@
+Метод CombinePaths
+private static IEnumerable<IEnumerable<Point>>? CombinePaths(
+    IEnumerable<SinglyLinkedList<Point>> startToChestsPaths,
+    IEnumerable<SinglyLinkedList<Point>> exitToChestsPaths)
+{
+    // Объединяем пути от начальной позиции к сундукам и от выхода к сундукам
+    return startToChestsPaths
+        .Join(exitToChestsPaths, startPath => startPath.Value, exitPath => exitPath.Value,
+            (startPath, exitPath) => startPath.Reverse().Concat(exitPath.Skip(1)))
+        .GroupBy(path => path.Count())
+        .MinBy(group => group.Key);
+}
+Объяснение кода
+Параметры метода:
+
+startToChestsPaths: Это коллекция путей (списков), которые ведут от начальной позиции к сундукам.
+exitToChestsPaths: Это коллекция путей (списков), которые ведут от выхода к сундукам.
+Join:
+
+.Join(exitToChestsPaths, startPath => startPath.Value, exitPath => exitPath.Value,
+    (startPath, exitPath) => startPath.Reverse().Concat(exitPath.Skip(1)))
+Join: Этот метод объединяет две коллекции на основе ключей. В данном случае мы объединяем пути от начальной позиции к сундукам и пути от выхода к сундукам.
+startPath => startPath.Value: Здесь мы указываем, что ключом для первой коллекции (startToChestsPaths) будет значение (или местоположение) текущего пути.
+exitPath => exitPath.Value: Аналогично, для второй коллекции (exitToChestsPaths) мы используем значение текущего пути как ключ.
+(startPath, exitPath) => startPath.Reverse().Concat(exitPath.Skip(1)): Это функция, которая определяет, как объединять элементы из обеих коллекций.
+startPath.Reverse(): Разворачивает путь от начальной позиции к сундукам, чтобы получить его в порядке от сундука к начальной позиции.
+exitPath.Skip(1): Пропускает первую точку в пути от выхода, чтобы избежать дублирования (так как последняя точка в startPath будет совпадать с первой в exitPath после реверса).
+Concat: Объединяет два списка (развернутый путь и путь от выхода) в один.
+GroupBy:
+
+.GroupBy(path => path.Count())
+GroupBy: Этот метод группирует результаты на основе количества точек в каждом пути.
+path => path.Count(): Здесь мы указываем, что группировка будет происходить по количеству точек в каждом пути. Это позволяет нам организовать пути по их длине.
+MinBy:
+
+.MinBy(group => group.Key);
+MinBy: Этот метод выбирает группу с минимальным значением ключа, который в данном случае — это количество точек в пути.
+group => group.Key: Здесь мы указываем, что ключом для выбора минимальной группы будет количество точек в пути.
