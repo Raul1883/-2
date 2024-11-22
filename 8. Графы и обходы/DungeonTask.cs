@@ -29,7 +29,10 @@ namespace Dungeon
             }
 
             // Если кратчайший путь до выхода без сундуков
-            var pathToExit = FindPathToExit(map);
+            var pathToExit = BfsTask.FindPaths(map, 
+                map.InitialPosition,
+                new Chest[] { new EmptyChest(map.Exit) }).FirstOrDefault(); 
+
             if (pathToExit != null)
                 return ConvertPathToDirections(pathToExit.Reverse()).ToArray();
 
@@ -37,12 +40,6 @@ namespace Dungeon
             return System.Array.Empty<MoveDirection>();
         }
 
-        private static IEnumerable<Point>? FindPathToExit(Map map)
-        {
-            // Находим путь от начальной позиции до выхода
-            return BfsTask.FindPaths(map, map.InitialPosition, new Chest[] { new EmptyChest(map.Exit) })
-                           .FirstOrDefault();
-        }
 
         private static IEnumerable<IEnumerable<Point>>? CombinePaths(
             IEnumerable<SinglyLinkedList<Point>> startToChestsPaths,
@@ -64,19 +61,19 @@ namespace Dungeon
         {
             // Получаем значения сундуков в словарь
             var chestValues = chests.ToDictionary(chest => chest.Location, chest => chest.Value);
-            byte maxChestValue = byte.MinValue; // минимальное возможно значение
+            var maxChestValue = byte.MinValue; // минимальное возможно значение
             IEnumerable<Point>? bestPath = null; // пока не нашли, то null
 
             // Ищем путь с максимальным значением сундука
             foreach (var path in paths)
             {
                 if (path != null)
-                { 
+                {
                     var chestLocation = path.FirstOrDefault(cell => chestValues.ContainsKey(cell));
                     if (chestLocation != null)
                     {
                         var chestValue = chestValues[chestLocation];
-                        if (chestValue >= maxChestValue) 
+                        if (chestValue >= maxChestValue)
                         {
                             maxChestValue = chestValue;
                             bestPath = path;
@@ -88,17 +85,22 @@ namespace Dungeon
             return bestPath;
         }
 
-        private static IEnumerable<MoveDirection> ConvertPathToDirections(IEnumerable<Point> path)
+        private static MoveDirection[] ConvertPathToDirections(IEnumerable<Point> path)
         {
+            // результирующий лист, со временем добавления O(1)
+            var directions = new LinkedList<MoveDirection>();
+
             // Конвертируем путь в направления движения
             Point? previousPoint = null; // предыдущая точка, изначально null
             foreach (var currentPoint in path)
             {
                 if (previousPoint != null) // если предыдущая точка существует
                     // используем статический готовый метод, для получения направления
-                    yield return Walker.ConvertOffsetToDirection(currentPoint - previousPoint);
+                    directions.AddLast(Walker
+                        .ConvertOffsetToDirection(currentPoint - previousPoint));
                 previousPoint = currentPoint;
             }
+            return directions.ToArray();
         }
     }
 }
